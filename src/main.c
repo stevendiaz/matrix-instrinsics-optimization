@@ -4,45 +4,14 @@
 #include <string.h>
 
 
-void a(int N)
+void register_tiling(int N)
 {
-    float (*A)[N] = malloc(sizeof(float[N][N]));
-    float (*B)[N] = malloc(sizeof(float[N][N]));
-    float (*C)[N] = malloc(sizeof(float[N][N]));
-
-    int NU, MU = 64/sizeof(float);
-    printf("nu: %d\n", NU);
-    int i,j,k;
-    for (i = 0; i < N; i++) {
-        for (j = 0; j < N; j++) {
-            for (k = 0; k < N; k++) {
-                C[i][j] = C[i][j] + A[i][k] * B[k][j];
-            }
-        }
-    }
-
-    free(A);
-    free(B);
-    free(C);
-}
-
-
-int main(int args, char *argv[]) 
-{
-    /* Data & parameter initialization */
     int i, j, k, m, n;
     int NU = 4;
     int MU = 4;
-    int N = 8;
     float (*A)[N] = malloc(sizeof(float[N][N]));
     float (*B)[N] = malloc(sizeof(float[N][N]));
     float (*C)[N] = malloc(sizeof(float[N][N]));
-    for(i = 0; i < N; i++) {
-        for (j = 0; j < N; j++) {
-            A[i][j] = 1;
-            B[i][j] = 2;
-        }
-    }
 
     /* Register tiling, no vectorization */
     for (i = 0; i < N; i += MU ) {
@@ -73,5 +42,17 @@ int main(int args, char *argv[])
     free(A);
     free(B);
     free(C);
+ 
+}
+
+
+int main(int args, char *argv[]) 
+{
+    /* Data & parameter initialization */
+    int n;
+    for(n = 4; n < 5; n += 4) {
+        register_tiling(n);
+    }
+
     return 0;
 }
