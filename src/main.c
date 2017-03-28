@@ -135,12 +135,19 @@ void vector_intrinsics(int N, int* PAPI_events){
     PAPI_start_counters(PAPI_events, 2);
 
     /* vectorization */
+    __attribute__((aligned(16))) float a[4], b[4];
 
     for (i = 0; i < N; i += MU ) {
         for (j = 0; j < N; j += NU) {
             for (k = 0; k < N; k++) {
-                __m128 rX = _mm_load_ps(&A[m]);
-                __m128 rY = _mm_load_ps(&B[k]);
+                for (m = i; m < i + MU; m++) {
+                    a[m - i] =  A[m][k];
+                    for (n = j; n < j + NU; n++) {
+                        b[n - j] = B[k][n];
+                    }
+                }
+                __m128 rX = _mm_load_ps(&a);
+                __m128 rY = _mm_load_ps(&b);
                 __m128 rZ = _mm_mul_ps(rX, rY);
                 rZ = _mm_add_ps(rZ, _mm_load_ps(&C[m]));
                 _mm_store_ps(&C[m], rZ);
