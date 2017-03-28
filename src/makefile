@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS := -L$(TACC_PAPI_LIB) -lpapi -I$(TACC_PAPI_INC) -Wall -Werror -O0
+CFLAGS := -L$(TACC_PAPI_LIB) -lpapi -I$(TACC_PAPI_INC) -Wall -O0
 
 
 

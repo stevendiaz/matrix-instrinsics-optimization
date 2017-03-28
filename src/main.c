@@ -203,16 +203,34 @@ void test() {
     int NU = 4;
     int MU = NU;
     int i, j, k, m, n;
+    float (*A)[N] = malloc(sizeof(float[N][N]));
+    float (*B)[N] = malloc(sizeof(float[N][N]));
+    float (*C)[N] = malloc(sizeof(float[N][N]));
+    memset(A, 0, N*N*sizeof(float));
+    memset(B, 0, N*N*sizeof(float));
+    memset(C, 0, N*N*sizeof(float));
+    
+    for (i = 0; i < N; i++) {
+      for (j = 0; j < N; j++) {
+	A[i][j] = 2;
+	B[i][j] = 1;
+      }
+    }
+
+    int NUMBER_OF_COLUMNS = 8;
     for (i = 0; i < N; i += NU) {
         for (j = 0; j < N; j += MU) {
-            for (k = 0; k < N; k++) {
+            for (k = 0; k < 4; k++) {
+                //printf("C[%d][%d]\n", i, k);
                 for (m = i; m < (i + MU); m += 4) {
                     // not sure about the below address
-                    c_addr = ((float * )C + m * NUMBER_OF_COLUMNS + j;
-
+                    float* c_addr = ((float * )C + m * NUMBER_OF_COLUMNS + k);
+                    printf("C[%d][%d]\n", m, k);
                     for (n = j; n < (j + NU); n++) {
-                        a_addr = ((float *)A + m * NUMBER_OF_COLUMNS + k);
-                        b_addr = ((float *)B + k * NUMBER_OF_COLUMNS + n);
+		      //printf("A[%d][%d]\n", m * NUMBER_OF_COLUMNS, k);
+		      //	printf("B[%d][%d]\n\n", k * NUMBER_OF_COLUMNS, n);
+                        float* a_addr = ((float *)A + m * NUMBER_OF_COLUMNS + k);
+                        float* b_addr = ((float *)B + k * NUMBER_OF_COLUMNS + n);
                     }
                 }
                 /* What we are trying to accomplish */
@@ -245,7 +263,8 @@ int main(int args, char *argv[]) {
     for(n = 4; n < 5; n += 4) {
         //mmm(n, PAPI_events);
         //register_tiling(n, PAPI_events);
-        vector_intrinsics(8, PAPI_events);
+        //vector_intrinsics(8, PAPI_events);
+        test();
     }
 
     return 0;
