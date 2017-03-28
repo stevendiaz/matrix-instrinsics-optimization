@@ -198,6 +198,38 @@ void vector_intrinsics(int N, int* PAPI_events){
     //free(C);
 }
 
+void test() {
+    int N = 8;
+    int NU = 4;
+    int MU = NU;
+    int i, j, k, m, n;
+    for (i = 0; i < N; i += NU) {
+        for (j = 0; j < N; j += MU) {
+            for (k = 0; k < N; k++) {
+                for (m = i; m < (i + MU); m += 4) {
+                    // not sure about the below address
+                    c_addr = ((float * )C + m * NUMBER_OF_COLUMNS + j;
+
+                    for (n = j; n < (j + NU); n++) {
+                        a_addr = ((float *)A + m * NUMBER_OF_COLUMNS + k);
+                        b_addr = ((float *)B + k * NUMBER_OF_COLUMNS + n);
+                    }
+                }
+                /* What we are trying to accomplish */
+
+                // A[i...MU-1, k]
+                // A[i][k]
+                // A[i + 1][k]
+                // A[i + 2][k]
+                // A[i + ...][k]
+                // A[i + MU-1][k]
+                // x = *((float *)A + i * NUMBER_OF_COLUMNS + k);
+                // y = *((float *)B + k * NUMBER_OF_COLUMNS + i);
+            }
+        }
+    }
+
+}
 
 int main(int args, char *argv[]) {
     /* Initalize PAPI counters */
