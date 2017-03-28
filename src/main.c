@@ -141,36 +141,45 @@ void vector_intrinsics(int N, int* PAPI_events){
     PAPI_start_counters(PAPI_events, 2);
 
     /* vectorization */
-    for (i = 0; i < N; i += MU ) {
-        for (j = 0; j < N; j += NU) {
+    //for (i = 0; i < N; i += MU ) {
+    //for (j = 0; j < N; j += NU) {
+    //	  printf("i = %d, j = %d\n", i, j);
+    i = 4;
+    j = 0;
             for (k = 0; k < N; k++) {
                 for (m = i; m < i + MU; m+=4) {
 		  //Load C by row
-		  __m128 rZ = _mm_loadu_ps((float *)(C + m*N + k));
+		  __m128 rZ = _mm_loadu_ps((float *)(C) + m*N + k + j);
+		  printf("C offset = %d\n", m*N + k +j);
 
                     for (n = j; n < j + NU; n++) {
 		      //print X
 		      //printf("Aptr: %p Bptr: %p\n", A + m*N + k*N, B + k*N + n);
 		      __m128 rX = _mm_load1_ps((float *)(A) + m*N + k*N);
+		      //printf("A offset = %d\n", m*N + k*N);
 		      float *val = (float*) &rX;
 		      //printf("A = %f \n", val[0]);
 		      
 		       //print Y
 		       __m128 rY = _mm_loadu_ps((float *)(B) + N + n);
-		      val = (float*) &rY;
+		       
+		       printf("A offset = %d, B offset = %d\n", (n - j)*N + i, N + n);
+		      
+
+		       val = (float*) &rY;
 		      //printf("B = (%f, %f, %f, %f) \n", val[0], val[1], val[2], val[3]);
 		     
 		      rY = _mm_mul_ps(rX, rY);
 		      rZ = _mm_add_ps(rZ, rY);
                     }
 
-		    //printf("\n\n");
+		    printf("\n\n");
 		    //Store C by row
-		      _mm_storeu_ps((float *)(C + m*N +(k + j)), rZ);
+		    _mm_storeu_ps((float *)(C) + m*N +(k + j), rZ);
 		}
             }
-        }
-    }
+	    //       }
+	    //}
 
     //Stop counters
     PAPI_stop_counters(counters, 2);
@@ -182,11 +191,11 @@ void vector_intrinsics(int N, int* PAPI_events){
             printf("%f ", C[i][j]);
         }
         printf("\n");
-    }
+	}
 
-    free(A);
-    free(B);
-    free(C);
+    //free(A);
+    //free(B);
+    //free(C);
 }
 
 
@@ -204,7 +213,7 @@ int main(int args, char *argv[]) {
     for(n = 4; n < 5; n += 4) {
         //mmm(n, PAPI_events);
         //register_tiling(n, PAPI_events);
-        vector_intrinsics(n, PAPI_events);
+        vector_intrinsics(8, PAPI_events);
     }
 
     return 0;
