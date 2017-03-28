@@ -12,14 +12,8 @@ end_to_end: multiply.c no_papi_multiply.c
 main: main.c
 	$(CC) $(CFLAGS) main.c -o main.o
 
-no_papi: no_papi_multiply.c
-	$(CC) -Wall -Werror -O3 -fp-model precise no_papi_multiply.c -o no_papi.o -lrt 
-
 run:
-	./multiply.o
-
-run_np:
-	./no_papi.o
+	./main.o
 
 clean:
 	rm *.o
