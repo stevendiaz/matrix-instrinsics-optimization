@@ -129,28 +129,45 @@ void vector_intrinsics(int N, int* PAPI_events){
     memset(A, 0, N*N*sizeof(float));
     memset(B, 0, N*N*sizeof(float));
     memset(C, 0, N*N*sizeof(float));
-
-
+    
+    for (i = 0; i < N; i++) {
+      for (j = 0; j < N; j++) {
+	A[i][j] = 2;
+	B[i][j] = 1;
+      }
+    }
+    
     //Start counters
     PAPI_start_counters(PAPI_events, 2);
 
     /* vectorization */
-    __attribute__((aligned(16))) float a[4], b[4];
-
     for (i = 0; i < N; i += MU ) {
         for (j = 0; j < N; j += NU) {
             for (k = 0; k < N; k++) {
-                for (m = i; m < i + MU; m++) {
-                    a[m - i] =  A[m][k];
+                for (m = i; m < i + MU; m+=4) {
+		  //Load C by row
+		  __m128 rZ = _mm_loadu_ps((float *)(C + m*N + k));
+
                     for (n = j; n < j + NU; n++) {
-                        b[n - j] = B[k][n];
+		      //print X
+		      //printf("Aptr: %p Bptr: %p\n", A + m*N + k*N, B + k*N + n);
+		      __m128 rX = _mm_load1_ps((float *)(A) + m*N + k*N);
+		      float *val = (float*) &rX;
+		      //printf("A = %f \n", val[0]);
+		      
+		       //print Y
+		       __m128 rY = _mm_loadu_ps((float *)(B) + N + n);
+		      val = (float*) &rY;
+		      //printf("B = (%f, %f, %f, %f) \n", val[0], val[1], val[2], val[3]);
+		     
+		      rY = _mm_mul_ps(rX, rY);
+		      rZ = _mm_add_ps(rZ, rY);
                     }
-                }
-                __m128 rX = _mm_load_ps(&a);
-                __m128 rY = _mm_load_ps(&b);
-                __m128 rZ = _mm_mul_ps(rX, rY);
-                rZ = _mm_add_ps(rZ, _mm_load_ps(&C[m]));
-                _mm_store_ps(&C[m], rZ);
+
+		    //printf("\n\n");
+		    //Store C by row
+		      _mm_storeu_ps((float *)(C + m*N +(k + j)), rZ);
+		}
             }
         }
     }
