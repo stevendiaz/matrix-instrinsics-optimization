@@ -4,8 +4,8 @@
 #include <string.h>
 #include <papi.h>
 
-void printCounters(int q, long long* counters){
-    printf("Part %c:", 'a' + q);
+void printCounters(int q, int size, long long* counters){
+  printf("Part %c: matrix size = %d\n", 'a' + q, size);
     printf("Number of flops: %lld\n", counters[0]);
     printf("Number of L1 data/ins cache misses: %lld\n", counters[1]);
 }
@@ -39,15 +39,15 @@ void mmm(int N, int* PAPI_events){
 
     //Stop counters
     PAPI_stop_counters(counters, 2);
-    printCounters(0, counters);
+    printCounters(0, N, counters);
 
     /* Checking output */
-    for(i = 0; i < N; i++) {
+    /*for(i = 0; i < N; i++) {
         for (j = 0; j < N; j++) {
             printf("%f ", C[i][j]);
         }
         printf("\n");
-    }
+	}*/
 
     free(A);
     free(B);
@@ -98,16 +98,16 @@ void register_tiling(int N, int* PAPI_events){
 
     //Stop counters
     PAPI_stop_counters(counters, 2);
-    printCounters(1, counters);
+    printCounters(1, N, counters);
 
 
     /* Checking output */
-    for(i = 0; i < N; i++) {
+    /*for(i = 0; i < N; i++) {
         for (j = 0; j < N; j++) {
             printf("%f ", C[i][j]);
         }
         printf("\n");
-    }
+	}*/
 
     free(A);
     free(B);
@@ -143,7 +143,7 @@ void vector_intrinsics(int N, int* PAPI_events){
     /* vectorization */
     for (i = 0; i < N; i += MU ) {
         for (j = 0; j < N; j += NU) {
-            for (k = 0; k < 4; k++) {
+	  for (k = 0; k < 4; k++) {
                 //Load C by row
                 float *c_addr = ((float *) C + (k + i) * N + j);
                 __m128 rZ = _mm_loadu_ps(c_addr);
@@ -165,15 +165,91 @@ void vector_intrinsics(int N, int* PAPI_events){
 
     //Stop counters
     PAPI_stop_counters(counters, 2);
-    printCounters(2, counters);
+    printCounters(2, N, counters);
 
     /* Checking output */
-    for(i = 0; i < N; i++) {
+    /*for(i = 0; i < N; i++) {
         for (j = 0; j < N; j++) {
             printf("%f ", C[i][j]);
         }
         printf("\n");
+	}*/
+
+    free(A);
+    free(B);
+    free(C);
+}
+
+/* Part d */
+void cache_blocking(int N, int* PAPI_events){
+    /* Initialize PAPI counter */
+   long long counters[2];
+    memset(counters, 0, 2*sizeof(long long));
+
+    int i, j, bi, bj, bk, n;
+  
+    int MU = 4;
+    int NU = 4;
+    int NB = 8;
+    float (*A)[N] = malloc(sizeof(float[N][N]));
+    float (*B)[N] = malloc(sizeof(float[N][N]));
+    float (*C)[N] = malloc(sizeof(float[N][N]));
+    memset(A, 0, N*N*sizeof(float));
+    memset(B, 0, N*N*sizeof(float));
+    memset(C, 0, N*N*sizeof(float));
+
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < N; j++) {
+            A[i][j] = 2;
+            B[i][j] = 1;
+        }
     }
+
+    //Start counters
+    PAPI_start_counters(PAPI_events, 2);
+
+    /* Cache blocking loops */
+    for (i = 0; i < N; i += NB ) {
+      for (j = 0; j < N; j += NB) {
+
+	/* Register tiling loops */
+	for (bi = i; bi < (i + NB); bi += MU) {
+	  for(bj = j; bj < (j + NB); bj += NU){
+	    //printf("REG corner[%d][%d]\n", bi,bj);
+	    for (bk = 0; bk < MU; bk++) {
+                //Load C by row
+                float *c_addr = ((float *) C + (bk + bi) * N + bj);
+	      __m128 rZ = _mm_loadu_ps(c_addr);
+
+                for (n = bj; n < bj + NU; n++) {
+                    float *a_addr = ((float *) A + n * N + bk + bi);
+                    float *b_addr = ((float *) B + (bk + bi) * N + bj);
+
+                    __m128 rX = _mm_load1_ps(a_addr);
+                    __m128 rY = _mm_loadu_ps(b_addr);
+                    rY = _mm_mul_ps(rX, rY);
+                    rZ = _mm_add_ps(rZ, rY);
+                }
+                //Store C by row
+                _mm_storeu_ps(c_addr, rZ);
+		}
+	  }
+	}
+      }
+    }
+
+
+    //Stop counters
+    PAPI_stop_counters(counters, 2);
+    printCounters(3, N, counters);
+
+    /* Checking output */
+    /*for(i = 0; i < N; i++) {
+        for (j = 0; j < N; j++) {
+            printf("%f ", C[i][j]);
+        }
+        printf("\n");
+	}*/
 
     free(A);
     free(B);
@@ -190,12 +266,44 @@ int main(int args, char *argv[]) {
     PAPI_library_init(PAPI_VER_CURRENT);
 
     /* Data & parameter initialization */
-    int n;
-    for(n = 4; n < 5; n += 4) {
-        //mmm(n, PAPI_events);
-        //register_tiling(n, PAPI_events);
-        vector_intrinsics(16, PAPI_events);
-    }
+
+    //Part a
+    /*
+    mmm(10, PAPI_events);
+    mmm(50, PAPI_events);
+    mmm(100, PAPI_events);
+    mmm(135, PAPI_events);
+    mmm(175, PAPI_events);
+    mmm(200, PAPI_events);
+    */
+
+    //Part b
+    /*
+    register_tiling(16, PAPI_events);
+    register_tiling(64, PAPI_events);
+    register_tiling(128, PAPI_events);
+    register_tiling(160, PAPI_events);
+    register_tiling(188, PAPI_events);
+    register_tiling(200, PAPI_events);
+    */
+
+    //Part c
+    /*
+    vector_intrinsics(16, PAPI_events);
+    vector_intrinsics(64, PAPI_events);
+    vector_intrinsics(128, PAPI_events);
+    vector_intrinsics(160, PAPI_events);
+    vector_intrinsics(188, PAPI_events);
+    vector_intrinsics(200, PAPI_events);
+    */
+
+    //Part d
+    cache_blocking(16, PAPI_events);
+    cache_blocking(64, PAPI_events);
+    cache_blocking(128, PAPI_events);
+    cache_blocking(160, PAPI_events);
+    cache_blocking(184, PAPI_events);
+    cache_blocking(200, PAPI_events);
 
     return 0;
 }
