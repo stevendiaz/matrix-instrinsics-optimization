@@ -77,11 +77,12 @@ void register_tiling(int N, int* PAPI_events){
                 // No vectorization
                 for (m = i; m < i + MU; m++) {
                     for(n = j; n < j + NU; n++) {
-                        __m128 rX = _mm_load_ss(&A[m][k]);
-                        __m128 rY = _mm_load_ss(&B[k][n]);
-                        __m128 rZ = _mm_mul_ss(rX, rY);
-                        rZ = _mm_add_ss(rZ, _mm_load_ss(&C[m][n]));
-                        _mm_store_ss(&C[m][n], rZ);
+		      register float rX = A[m][k];
+		      register float rY = B[k][n];
+		      register float rZ = C[i][j];
+		      rY = rX * rY;
+		      rZ += rY;
+		      C[i][j] = rZ;
                     }
                 }
             }
@@ -165,7 +166,7 @@ void cache_blocking(int N, int* PAPI_events){
   
     int MU = 4;
     int NU = 4;
-    int NB = 8;
+    int NB = 64;
     float (*A)[N] = malloc(sizeof(float[N][N]));
     float (*B)[N] = malloc(sizeof(float[N][N]));
     float (*C)[N] = malloc(sizeof(float[N][N]));
@@ -236,23 +237,23 @@ int main(int args, char *argv[]) {
 
     //Part a
     /*
-    mmm(10, PAPI_events);
-    mmm(50, PAPI_events);
-    mmm(100, PAPI_events);
-    mmm(135, PAPI_events);
-    mmm(175, PAPI_events);
+    mmm(16, PAPI_events);
+    mmm(64, PAPI_events);
+    mmm(128, PAPI_events);
+    mmm(160, PAPI_events);
+    mmm(188, PAPI_events);
     mmm(200, PAPI_events);
     */
 
     //Part b
-    /*
+    
     register_tiling(16, PAPI_events);
     register_tiling(64, PAPI_events);
     register_tiling(128, PAPI_events);
     register_tiling(160, PAPI_events);
     register_tiling(188, PAPI_events);
     register_tiling(200, PAPI_events);
-    */
+    
 
     //Part c
     /*
@@ -265,12 +266,13 @@ int main(int args, char *argv[]) {
     */
 
     //Part d
-    cache_blocking(16, PAPI_events);
+    /* cache_blocking(16, PAPI_events);
     cache_blocking(64, PAPI_events);
     cache_blocking(128, PAPI_events);
     cache_blocking(160, PAPI_events);
-    cache_blocking(184, PAPI_events);
-    cache_blocking(200, PAPI_events);
+    cache_blocking(184, PAPI_events);*/
+    
+    //cache_blocking(192, PAPI_events);
 
     return 0;
 }
